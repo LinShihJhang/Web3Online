@@ -60,11 +60,11 @@ contract Avatar is
             ORG: org,
             LV: 1,
             HP: 10,
-            MP: 11,
-            STR: 2,
-            DEF: 3,
-            DEX: 4,
-            LUK: 5
+            MP: 10,
+            STR: 1,
+            DEF: 1,
+            DEX: 1,
+            LUK: 1
         });
 
         return tokenId;
@@ -215,6 +215,10 @@ contract Avatar is
                     abi.encodePacked(
                         '{"description": "Web3 Online Avatar", "image": "data:image/svg+xml;base64,',
                         Base64.encode(data),
+                        '", "name": "',
+                        bytes(Strings.toString(tokenId)),
+                        '-',
+                        bytes(attribute.NAME),
                         '"}'
                     )
                 )
