@@ -16,6 +16,9 @@ contract Web3OnlineScript is Script {
         uint tokenId = avatar.mint(address(this), "AppWorks", "B");
         console2.log(avatar.getAttributeJson(tokenId));
 
+        uint tokenId2 = avatar.mint(address(this), "WMWMWMWMWMWMWMWMWMWM", "B");
+        console2.log(avatar.getAttributeJson(tokenId2));
+
         vm.stopBroadcast();
     }
 }

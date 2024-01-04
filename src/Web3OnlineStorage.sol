@@ -19,5 +19,6 @@ contract Web3OnlineStorage {
         uint DEF; //Defense：物理防禦力
         uint DEX; //Dexterity 敏捷 閃避
         uint LUK; //Luck 幸運 爆擊
+        uint STATUS; //目前狀態
     }
 }

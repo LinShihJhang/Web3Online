@@ -23,12 +23,15 @@ contract AvatarrTest is Test {
     function testMint() public {
         vm.startPrank(user1);
 
-        uint tokenId = avatar.mint(user1, "AppWorks", "B");
-        //uint tokenId = avatar.mint(user1, "WWWWWWWWWWWWW", "B");
+        //uint tokenId = avatar.mint(user1, "AppWorks", "B");
+        uint tokenId = avatar.mint(user1, "WMWMWMWMWMWMWMWMWMWM", "B");
         assertEq(avatar.ownerOf(tokenId), user1);
         console2.log(avatar.getAttributeJson(tokenId));
-        // console2.log(avatar.getAttributeFromBytes(avatar.getAttribute(tokenId)));
-        console2.log(avatar.tokenURI(tokenId));
+
+
+        uint tokenId2 = avatar.mint(user1, "AppWorks", "B");
+        assertEq(avatar.ownerOf(tokenId2), user1);
+        console2.log(avatar.getAttributeJson(tokenId2));
 
         vm.expectRevert("Avatar Error: Name is too long");
         avatar.mint(user1, "AppWorksAppWorksAppWorksAppWorksAppWorks", "B");

@@ -18,23 +18,8 @@ contract Avatar is
 {
     using StringUtils for *;
 
-    // struct Attribute {
-    //     string NAME;
-    //     string ORG; //Organization 組織
-    //     uint LV; //Level 等級
-    //     uint HP; //Health Point 血量
-    //     uint MP; //Magic Point 魔力值
-    //     uint STR; //Strength 力量 攻擊
-    //     uint DEF; //Defense：物理防禦力
-    //     uint DEX; //Dexterity 敏捷 閃避
-    //     uint LUK; //Luck 幸運 爆擊
-    // }
-
-    mapping(uint => Attribute) private attributes;
-    mapping(uint => uint) private avatarStatus;
-
-    mapping(string => bool) private orgs;
-
+    mapping(uint => Attribute) public attributes;
+    mapping(string => bool) public orgs;
     uint public NameMaxLength = 20;
 
     constructor() ERC721("Web3Online Avatar", "WOAV") Ownable(msg.sender) {
@@ -64,7 +49,8 @@ contract Avatar is
             STR: 1,
             DEF: 1,
             DEX: 1,
-            LUK: 1
+            LUK: 1,
+            STATUS: 1
         });
 
         return tokenId;
@@ -84,16 +70,16 @@ contract Avatar is
         NameMaxLength = maxLength;
     }
 
-    function getAttribute(uint tokenId) public view returns (bytes memory) {
+    function getAttributeBytes(uint tokenId) public view returns (bytes memory) {
         return abi.encode(attributes[tokenId]);
     }
 
-    function getAttributeFromBytes(
-        bytes calldata data
-    ) public pure returns (uint) {
-        Attribute memory attribute = abi.decode(data, (Attribute));
-        return attribute.HP;
-    }
+    // function getAttributeFromBytes(
+    //     bytes calldata data
+    // ) public pure returns (uint) {
+    //     Attribute memory attribute = abi.decode(data, (Attribute));
+    //     return attribute.HP;
+    // }
 
     //getAtrribute
     function getAttributeJson(
@@ -125,6 +111,8 @@ contract Avatar is
             Strings.toString(attribute.DEX),
             ',"LUK":',
             Strings.toString(attribute.LUK),
+            ',"STATUS":',
+            Strings.toString(attribute.STATUS),
             "}"
         );
 
@@ -152,58 +140,62 @@ contract Avatar is
         data = abi.encodePacked(
             '<svg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet" viewBox="0 0 350 350"> <style>.base { fill: green; font-family: serif; font-size: 14px; }</style><rect width="100%" height="100%" fill="black" /><text x="',
             bytes(Strings.toString(curlyBracketsXPosition)),
-            '" y="50" class="base">{</text><text x="',
+            '" y="25" class="base">{</text><text x="',
             bytes(Strings.toString(textXPosition)),
-            '" y="75" class="base">"TOKENID": ',
+            '" y="50" class="base">"TOKENID": ',
             bytes(Strings.toString(tokenId)),
             ',</text><text x="',
             bytes(Strings.toString(textXPosition)),
-            '" y="100" class="base">"NAME": "',
+            '" y="75" class="base">"NAME": "',
             bytes(attribute.NAME)
         );
         data = abi.encodePacked(
             data,
             '",</text><text x="',
             bytes(Strings.toString(textXPosition)),
-            '" y="125" class="base">"ORG": "',
+            '" y="100" class="base">"ORG": "',
             bytes(attribute.ORG),
             '",</text><text x="',
             bytes(Strings.toString(textXPosition)),
-            '" y="150" class="base">"LV": ',
+            '" y="125" class="base">"LV": ',
             bytes(Strings.toString(attribute.LV))
         );
         data = abi.encodePacked(
             data,
             ',</text><text x="',
             bytes(Strings.toString(textXPosition)),
-            '" y="175" class="base">"HP": ',
+            '" y="150" class="base">"HP": ',
             bytes(Strings.toString(attribute.HP)),
             ',</text><text x="',
             bytes(Strings.toString(textXPosition)),
-            '" y="200" class="base">"MP": ',
+            '" y="175" class="base">"MP": ',
             bytes(Strings.toString(attribute.MP))
         );
         data = abi.encodePacked(
             data,
             ',</text><text x="',
             bytes(Strings.toString(textXPosition)),
-            '" y="225" class="base">"STR": ',
+            '" y="200" class="base">"STR": ',
             bytes(Strings.toString(attribute.STR)),
             ',</text><text x="',
             bytes(Strings.toString(textXPosition)),
-            '" y="250" class="base">"DEF": ',
+            '" y="225" class="base">"DEF": ',
             bytes(Strings.toString(attribute.DEF))
         );
         data = abi.encodePacked(
             data,
             ',</text><text x="',
             bytes(Strings.toString(textXPosition)),
-            '" y="275" class="base">"DEX": ',
+            '" y="250" class="base">"DEX": ',
             bytes(Strings.toString(attribute.DEX)),
             ',</text><text x="',
             bytes(Strings.toString(textXPosition)),
-            '" y="300" class="base">"LUK": ',
+            '" y="275" class="base">"LUK": ',
             bytes(Strings.toString(attribute.LUK)),
+            ',</text><text x="',
+            bytes(Strings.toString(textXPosition)),
+            '" y="300" class="base">"STATUS": ',
+            bytes(Strings.toString(attribute.STATUS)),
             '</text><text x="',
             bytes(Strings.toString(curlyBracketsXPosition)),
             '" y="325" class="base">}</text></svg>'
