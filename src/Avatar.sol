@@ -56,6 +56,20 @@ contract Avatar is
         return tokenId;
     }
 
+    function editName(uint tokenId, string calldata name) public {
+        require(
+            checkAvatarOwner(tokenId),
+            "Avatar Error: Only Owner can edit name"
+        );
+        require(checkNameStringLength(name), "Avatar Error: Name is too long");
+        Attribute storage attribute = attributes[tokenId];
+        attribute.NAME = name;
+    }
+
+    function checkAvatarOwner(uint tokenId) internal view returns (bool) {
+        return ownerOf(tokenId) == msg.sender;
+    }
+
     function checkNameStringLength(
         string calldata name
     ) public view returns (bool) {
@@ -70,7 +84,9 @@ contract Avatar is
         NameMaxLength = maxLength;
     }
 
-    function getAttributeBytes(uint tokenId) public view returns (bytes memory) {
+    function getAttributeBytes(
+        uint tokenId
+    ) public view returns (bytes memory) {
         return abi.encode(attributes[tokenId]);
     }
 
@@ -123,16 +139,15 @@ contract Avatar is
     function tokenURI(
         uint256 tokenId
     ) public view override returns (string memory) {
-
         Attribute memory attribute = attributes[tokenId];
         uint textXPosition;
         uint curlyBracketsXPosition;
 
         if (attribute.NAME.strlen() > 13) {
-            curlyBracketsXPosition=10;
+            curlyBracketsXPosition = 10;
             textXPosition = 20;
-        }else{
-            curlyBracketsXPosition=80;
+        } else {
+            curlyBracketsXPosition = 80;
             textXPosition = 110;
         }
         bytes memory data;
@@ -209,7 +224,7 @@ contract Avatar is
                         Base64.encode(data),
                         '", "name": "',
                         bytes(Strings.toString(tokenId)),
-                        '-',
+                        "-",
                         bytes(attribute.NAME),
                         '"}'
                     )
