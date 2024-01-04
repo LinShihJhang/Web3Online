@@ -20,7 +20,9 @@ contract Avatar is
 
     mapping(uint => Attribute) public attributes;
     mapping(string => bool) public orgs;
+    mapping(uint => uint) public levelUpStartBlocks;
     uint public NameMaxLength = 20;
+    uint public LevelUpWaitingBlock = 3600; //12h
 
     constructor() ERC721("Web3Online Avatar", "WOAV") Ownable(msg.sender) {
         // Initialize orgs
@@ -28,6 +30,14 @@ contract Avatar is
         orgs["E"] = true;
         orgs["S"] = true;
         orgs["N"] = true;
+    }
+
+    modifier checkAvatarOwner(uint tokenId) {
+        require(
+            ownerOf(tokenId) == msg.sender,
+            "Avatar Error: Only Owner can edit name"
+        );
+        _;
     }
 
     function mint(
@@ -56,18 +66,83 @@ contract Avatar is
         return tokenId;
     }
 
-    function editName(uint tokenId, string calldata name) public {
-        require(
-            checkAvatarOwner(tokenId),
-            "Avatar Error: Only Owner can edit name"
-        );
+    function editName(
+        uint tokenId,
+        string calldata name
+    ) public checkAvatarOwner(tokenId) {
         require(checkNameStringLength(name), "Avatar Error: Name is too long");
         Attribute storage attribute = attributes[tokenId];
         attribute.NAME = name;
     }
 
-    function checkAvatarOwner(uint tokenId) internal view returns (bool) {
-        return ownerOf(tokenId) == msg.sender;
+    function startLevelUp(uint tokenId) public checkAvatarOwner(tokenId) {
+        Attribute storage attribute = attributes[tokenId];
+        require(attribute.STATUS == 1, "Avatar Error: Status is not idle");
+        attribute.STATUS = 2;
+
+        //burn token
+        //require
+
+        levelUpStartBlocks[tokenId] = block.number;
+    }
+
+    function openLevelUpResult(uint tokenId) public checkAvatarOwner(tokenId) {
+        uint levelUpStartBlock = levelUpStartBlocks[tokenId];
+        require(
+            block.number > levelUpStartBlock + LevelUpWaitingBlock,
+            "Avatar Error: LevelUpWaitingBlock is not over"
+        );
+
+        Attribute storage attribute = attributes[tokenId];
+        uint memory LV = attribute.LV;
+        uint memory HP = attribute.HP;
+        uint memory MP = attribute.MP;
+        uint memory STR = attribute.STR;
+        uint memory DEF = attribute.DEF;
+        uint memory DEX = attribute.DEX;
+        uint memory LUK = attribute.LUK;
+
+        require(
+            attribute.STATUS == 2,
+            "Avatar Error: Status is not level-up waiting"
+        );
+        attribute.STATUS = 1;
+
+        attribute.LV = LV + 1;
+
+        uint halfLevelUpWaitingBlock = LevelUpWaitingBlock / 2;
+        uint pushForwardBlock = getBlockHashUint(levelUpStartBlock + halfLevelUpWaitingBlock) % halfLevelUpWaitingBlock;
+        uint randomBlockNumber = levelUpStartBlock + pushForwardBlock;
+
+        //HP
+        if(getBlockHashUint(randomBlockNumber) % LV =< (LV-HP+9)){
+            attribute.HP = HP + 1;
+        }
+        uint randomBlockNumber += HP;
+        //MP
+        if(getBlockHashUint(randomBlockNumber) % LV =< (LV-MP+9)){
+            attribute.MP = MP + 1;
+        }
+        uint randomBlockNumber += MP;
+        //STR
+        if(getBlockHashUint(randomBlockNumber) % LV =< (LV-STR)){
+            attribute.STR = STR + 1;
+        }
+        uint randomBlockNumber += STR;
+        //DEF
+        if(getBlockHashUint(randomBlockNumber) % LV =< (LV-DEF)){
+            attribute.DEF = DEF + 1;
+        }
+        uint randomBlockNumber += DEF;
+        //DEX
+        if(getBlockHashUint(randomBlockNumber) % LV =< (LV-DEX)){
+            attribute.DEX = DEX + 1;
+        }
+        uint randomBlockNumber += DEX;
+        //LUK
+        if(getBlockHashUint(randomBlockNumber) % LV =< (LV-LUK)){
+            attribute.LUK = LUK + 1;
+        }
     }
 
     function checkNameStringLength(
@@ -82,6 +157,14 @@ contract Avatar is
 
     function changeNameMaxLength(uint maxLength) public onlyOwner {
         NameMaxLength = maxLength;
+    }
+
+    function changeLevelUpWaitingBlock(uint waitingBlock) public onlyOwner {
+        LevelUpWaitingBlock = waitingBlock;
+    }
+
+    function getBlockHashUint(uint blocknumber) external view returns (uint) {
+        return uint(blockhash(blocknumber));
     }
 
     function getAttributeBytes(
