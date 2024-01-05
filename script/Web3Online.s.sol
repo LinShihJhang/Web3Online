@@ -12,7 +12,7 @@ contract Web3OnlineScript is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         Avatar avatar = new Avatar();
-        
+
         uint tokenId = avatar.mint(address(this), "AppWorks", "B");
         console2.log(avatar.getAttributeJson(tokenId));
 

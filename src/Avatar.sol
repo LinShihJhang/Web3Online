@@ -18,11 +18,45 @@ contract Avatar is
 {
     using StringUtils for *;
 
+    event Mint(address indexed to, uint indexed tokenId, string indexed name);
+    event EditName(
+        address indexed owner,
+        uint indexed tokenId,
+        string indexed name
+    );
+    event StartLevelUp(
+        address indexed owner,
+        uint indexed tokenId,
+        uint indexed levelUpStartBlock
+    );
+    event OpenLevelUpResult(
+        address indexed owner,
+        uint indexed tokenId,
+        uint indexed level,
+        uint HP,
+        uint MP,
+        uint STR,
+        uint DEF,
+        uint DEX,
+        uint LUK
+    );
+
+    event OpenLevelUpResultOver256(
+        address indexed owner,
+        uint indexed tokenId,
+        uint indexed level,
+        uint HP,
+        uint MP,
+        uint STR,
+        uint DEF,
+        uint DEX,
+        uint LUK
+    );
+
     mapping(uint => Attribute) public attributes;
     mapping(string => bool) public orgs;
     mapping(uint => uint) public levelUpStartBlocks;
     uint public NameMaxLength = 20;
-    uint public LevelUpWaitingBlock = 3600; //12h
 
     constructor() ERC721("Web3Online Avatar", "WOAV") Ownable(msg.sender) {
         // Initialize orgs
@@ -63,6 +97,7 @@ contract Avatar is
             STATUS: 1
         });
 
+        emit Mint(to, tokenId, name);
         return tokenId;
     }
 
@@ -73,8 +108,14 @@ contract Avatar is
         require(checkNameStringLength(name), "Avatar Error: Name is too long");
         Attribute storage attribute = attributes[tokenId];
         attribute.NAME = name;
+
+        emit EditName(msg.sender, tokenId, name);
     }
 
+    /*
+    //After executing the 'startLevelUp' function
+    //You need to finish the 'openLevelUpResult' function after 86 blocks and before 256 blocks.
+    */
     function startLevelUp(uint tokenId) public checkAvatarOwner(tokenId) {
         Attribute storage attribute = attributes[tokenId];
         require(attribute.STATUS == 1, "Avatar Error: Status is not idle");
@@ -84,9 +125,12 @@ contract Avatar is
         //require
 
         levelUpStartBlocks[tokenId] = block.number;
+
+        emit StartLevelUp(msg.sender, tokenId, block.number);
     }
 
     function openLevelUpResult(uint tokenId) public checkAvatarOwner(tokenId) {
+        uint LevelUpWaitingBlock = 86;
         uint levelUpStartBlock = levelUpStartBlocks[tokenId];
         require(
             block.number > levelUpStartBlock + LevelUpWaitingBlock,
@@ -94,13 +138,13 @@ contract Avatar is
         );
 
         Attribute storage attribute = attributes[tokenId];
-        uint memory LV = attribute.LV;
-        uint memory HP = attribute.HP;
-        uint memory MP = attribute.MP;
-        uint memory STR = attribute.STR;
-        uint memory DEF = attribute.DEF;
-        uint memory DEX = attribute.DEX;
-        uint memory LUK = attribute.LUK;
+        uint LV = attribute.LV;
+        uint HP = attribute.HP;
+        uint MP = attribute.MP;
+        uint STR = attribute.STR;
+        uint DEF = attribute.DEF;
+        uint DEX = attribute.DEX;
+        uint LUK = attribute.LUK;
 
         require(
             attribute.STATUS == 2,
@@ -108,41 +152,89 @@ contract Avatar is
         );
         attribute.STATUS = 1;
 
-        attribute.LV = LV + 1;
+        //level-up
+        LV = LV + 1;
+        attribute.LV = LV;
 
-        uint halfLevelUpWaitingBlock = LevelUpWaitingBlock / 2;
-        uint pushForwardBlock = getBlockHashUint(levelUpStartBlock + halfLevelUpWaitingBlock) % halfLevelUpWaitingBlock;
-        uint randomBlockNumber = levelUpStartBlock + pushForwardBlock;
+        //check over 256 blocks
+        if (
+            uint(blockhash(levelUpStartBlock)) == 0 &&
+            uint(blockhash(levelUpStartBlock - 1)) == 0 &&
+            uint(blockhash(levelUpStartBlock - 2)) == 0
+        ) {
+            emit OpenLevelUpResultOver256(
+                msg.sender,
+                tokenId,
+                LV,
+                HP,
+                MP,
+                STR,
+                DEF,
+                DEX,
+                LUK
+            );
+        } else {
+            uint pushForwardBlock = getBlockHashUint(
+                levelUpStartBlock + LevelUpWaitingBlock / 2
+            ) % (LevelUpWaitingBlock / 2);
+            uint randomBlockNumber = levelUpStartBlock + pushForwardBlock;
 
-        //HP
-        if(getBlockHashUint(randomBlockNumber) % LV =< (LV-HP+9)){
-            attribute.HP = HP + 1;
+            //HP
+            uint threshold = LV > 30
+                ? 10 + LV - HP + (LV / uint(10))
+                : 10 + LV - HP;
+            if (getBlockHashUint(randomBlockNumber) % LV <= threshold) {
+                HP = HP + 1;
+                attribute.HP = HP;
+            }
+            randomBlockNumber = randomBlockNumber + ((HP % 7) + 1);
+            //MP
+            threshold = LV > 30 ? 10 + LV - MP + (LV / uint(10)) : 10 + LV - MP;
+            if (getBlockHashUint(randomBlockNumber) % LV <= threshold) {
+                MP = MP + 1;
+                attribute.MP = MP;
+            }
+            randomBlockNumber = randomBlockNumber + ((MP % 7) + 1);
+            //STR
+            threshold = LV > 30 ? LV - STR + (LV / uint(10)) : LV - STR;
+            if (getBlockHashUint(randomBlockNumber) % LV <= threshold) {
+                STR = STR + 1;
+                attribute.STR = STR;
+            }
+            randomBlockNumber = randomBlockNumber + ((STR % 7) + 1);
+            //DEF
+            threshold = LV > 30 ? LV - DEF + (LV / uint(10)) : LV - DEF;
+            if (getBlockHashUint(randomBlockNumber) % LV <= threshold) {
+                DEF = DEF + 1;
+                attribute.DEF = DEF;
+            }
+            randomBlockNumber = randomBlockNumber + ((DEF % 7) + 1);
+            //DEX
+            threshold = LV > 30 ? LV - DEX + (LV / uint(10)) : LV - DEX;
+            if (getBlockHashUint(randomBlockNumber) % LV <= threshold) {
+                DEX = DEX + 1;
+                attribute.DEX = DEX;
+            }
+            randomBlockNumber = randomBlockNumber + ((DEX % 7) + 1);
+            //LUK
+            threshold = LV > 30 ? LV - LUK + (LV / uint(10)) : LV - LUK;
+            if (getBlockHashUint(randomBlockNumber) % LV <= threshold) {
+                LUK = LUK + 1;
+                attribute.LUK = LUK;
+            }
         }
-        uint randomBlockNumber += HP;
-        //MP
-        if(getBlockHashUint(randomBlockNumber) % LV =< (LV-MP+9)){
-            attribute.MP = MP + 1;
-        }
-        uint randomBlockNumber += MP;
-        //STR
-        if(getBlockHashUint(randomBlockNumber) % LV =< (LV-STR)){
-            attribute.STR = STR + 1;
-        }
-        uint randomBlockNumber += STR;
-        //DEF
-        if(getBlockHashUint(randomBlockNumber) % LV =< (LV-DEF)){
-            attribute.DEF = DEF + 1;
-        }
-        uint randomBlockNumber += DEF;
-        //DEX
-        if(getBlockHashUint(randomBlockNumber) % LV =< (LV-DEX)){
-            attribute.DEX = DEX + 1;
-        }
-        uint randomBlockNumber += DEX;
-        //LUK
-        if(getBlockHashUint(randomBlockNumber) % LV =< (LV-LUK)){
-            attribute.LUK = LUK + 1;
-        }
+
+        emit OpenLevelUpResult(
+            msg.sender,
+            tokenId,
+            LV,
+            HP,
+            MP,
+            STR,
+            DEF,
+            DEX,
+            LUK
+        );
     }
 
     function checkNameStringLength(
@@ -155,16 +247,37 @@ contract Avatar is
         return orgs[org];
     }
 
+    function getNameMaxLength() public view returns (uint) {
+        return NameMaxLength;
+    }
+
     function changeNameMaxLength(uint maxLength) public onlyOwner {
         NameMaxLength = maxLength;
     }
 
-    function changeLevelUpWaitingBlock(uint waitingBlock) public onlyOwner {
-        LevelUpWaitingBlock = waitingBlock;
-    }
+    // function getLevelUpWaitingBlock() public view returns (uint) {
+    //     return LevelUpWaitingBlock;
+    // }
 
-    function getBlockHashUint(uint blocknumber) external view returns (uint) {
-        return uint(blockhash(blocknumber));
+    // function changeLevelUpWaitingBlock(uint waitingBlock) public onlyOwner {
+    //     LevelUpWaitingBlock = waitingBlock;
+    // }
+
+    // function getHalfLevelUpWaitingBlock() public view returns (uint) {
+    //     return HalfLevelUpWaitingBlock;
+    // }
+
+    // function changeHalfLevelUpWaitingBlock(uint halfWaitingBlock) public onlyOwner {
+    //     HalfLevelUpWaitingBlock = halfWaitingBlock;
+    // }
+
+    function getBlockHashUint(uint blocknumber) internal view returns (uint) {
+        return
+            (uint(blockhash(blocknumber)) % 10e10) +
+            (uint(blockhash(blocknumber + 1)) % 10e10) +
+            (uint(blockhash(blocknumber + 2)) % 10e10) +
+            (uint(blockhash(blocknumber + 3)) % 10e10) +
+            (uint(blockhash(blocknumber + 4)) % 10e10);
     }
 
     function getAttributeBytes(

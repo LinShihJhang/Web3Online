@@ -14,23 +14,31 @@ contract AvatarrTest is Test, Web3OnlineStorage {
     address user3 = makeAddr("User3");
 
     function setUp() public {
+        // fork block
+        vm.createSelectFork(vm.envString("MAIN_RPC"));
+        console2.log(block.number);
+        vm.rollFork(block.number -50000);
+        // console2.log(uint(blockhash(block.number-255)));
+        // console2.log(uint(blockhash(block.number-256)));
+        // console2.log(uint(blockhash(block.number-257))); //0
+        console2.log(block.number);
+
         vm.startPrank(admin);
         avatar = new Avatar();
         vm.label(address(avatar), "Avatar");
         vm.stopPrank();
-        
-        mint();
-
     }
 
-    function mint() public {
+    function mint() public returns (uint) {
         vm.startPrank(user1);
 
-        uint tokenId2 = avatar.mint(user1, "AppWorks", "B");
-        assertEq(avatar.ownerOf(tokenId2), user1);
-        console2.log(avatar.getAttributeJson(tokenId2));
+        uint tokenId = avatar.mint(user1, "AppWorks", "B");
+        assertEq(avatar.ownerOf(tokenId), user1);
+        console2.log(avatar.getAttributeJson(tokenId));
 
         vm.stopPrank();
+
+        return tokenId;
     }
 
     function testMint() public {
@@ -50,24 +58,43 @@ contract AvatarrTest is Test, Web3OnlineStorage {
     }
 
     function testEditName() public {
+        uint tokenId = mint();
         vm.startPrank(user1);
-
-        Attribute memory attribute = abi.decode(avatar.getAttributeBytes(1), (Attribute));
+        Attribute memory attribute = abi.decode(
+            avatar.getAttributeBytes(tokenId),
+            (Attribute)
+        );
         assertEq(attribute.NAME, "AppWorks");
 
-        avatar.editName(1, "AppWorks2");
-
-        attribute = abi.decode(avatar.getAttributeBytes(1), (Attribute));
+        avatar.editName(tokenId, "AppWorks2");
+        attribute = abi.decode(avatar.getAttributeBytes(tokenId), (Attribute));
         assertEq(attribute.NAME, "AppWorks2");
 
         vm.expectRevert("Avatar Error: Name is too long");
-        avatar.editName(1, "AppWorksAppWorksAppWorksAppWorksAppWorks");
+        avatar.editName(tokenId, "AppWorksAppWorksAppWorksAppWorksAppWorks");
+        
         vm.stopPrank();
 
         vm.startPrank(user2);
         vm.expectRevert("Avatar Error: Only Owner can edit name");
-        avatar.editName(1, "AppWorks2");
+        avatar.editName(tokenId, "AppWorks2");
         vm.stopPrank();
     }
 
+    function testLevelUp() public {
+        vm.startPrank(user1);
+
+        uint tokenId = avatar.mint(user1, "LevelUpTester", "B");
+        assertEq(avatar.ownerOf(tokenId), user1);
+        console2.log(avatar.getAttributeJson(tokenId));
+
+        for (uint i = 0; i < 50; i++) {
+            avatar.startLevelUp(tokenId);
+            vm.rollFork(block.number + 87);
+            avatar.openLevelUpResult(tokenId);
+            console2.log(avatar.getAttributeJson(tokenId));
+        }
+
+        vm.stopPrank();
+    }
 }
