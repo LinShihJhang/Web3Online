@@ -13,11 +13,46 @@ contract AvatarrTest is Test, Web3OnlineStorage {
     address user2 = makeAddr("User2");
     address user3 = makeAddr("User3");
 
+    event Mint(address indexed to, uint indexed tokenId, string indexed name);
+    event EditName(
+        address indexed owner,
+        uint indexed tokenId,
+        string indexed name
+    );
+    event StartLevelUp(
+        address indexed owner,
+        uint indexed tokenId,
+        uint indexed levelUpStartBlock
+    );
+    event OpenLevelUpResult(
+        address indexed owner,
+        uint indexed tokenId,
+        uint indexed level,
+        uint HP,
+        uint MP,
+        uint STR,
+        uint DEF,
+        uint DEX,
+        uint LUK
+    );
+
+    event OpenLevelUpResultOver256(
+        address indexed owner,
+        uint indexed tokenId,
+        uint indexed level,
+        uint HP,
+        uint MP,
+        uint STR,
+        uint DEF,
+        uint DEX,
+        uint LUK
+    );
+
     function setUp() public {
         // fork block
         vm.createSelectFork(vm.envString("MAIN_RPC"));
         console2.log(block.number);
-        vm.rollFork(block.number -50000);
+        vm.rollFork(block.number - 500000);
         // console2.log(uint(blockhash(block.number-255)));
         // console2.log(uint(blockhash(block.number-256)));
         // console2.log(uint(blockhash(block.number-257))); //0
@@ -44,6 +79,8 @@ contract AvatarrTest is Test, Web3OnlineStorage {
     function testMint() public {
         vm.startPrank(user1);
 
+        vm.expectEmit(true, true, true, true);
+        emit Mint(user1, 1, "WMWMWMWMWMWMWMWMWMWM");
         uint tokenId = avatar.mint(user1, "WMWMWMWMWMWMWMWMWMWM", "B");
         assertEq(avatar.ownerOf(tokenId), user1);
         console2.log(avatar.getAttributeJson(tokenId));
@@ -66,13 +103,15 @@ contract AvatarrTest is Test, Web3OnlineStorage {
         );
         assertEq(attribute.NAME, "AppWorks");
 
+        vm.expectEmit(true, true, true, true);
+        emit EditName(user1, tokenId, "AppWorks2");
         avatar.editName(tokenId, "AppWorks2");
         attribute = abi.decode(avatar.getAttributeBytes(tokenId), (Attribute));
         assertEq(attribute.NAME, "AppWorks2");
 
         vm.expectRevert("Avatar Error: Name is too long");
         avatar.editName(tokenId, "AppWorksAppWorksAppWorksAppWorksAppWorks");
-        
+
         vm.stopPrank();
 
         vm.startPrank(user2);
@@ -83,17 +122,68 @@ contract AvatarrTest is Test, Web3OnlineStorage {
 
     function testLevelUp() public {
         vm.startPrank(user1);
-
         uint tokenId = avatar.mint(user1, "LevelUpTester", "B");
         assertEq(avatar.ownerOf(tokenId), user1);
         console2.log(avatar.getAttributeJson(tokenId));
 
-        for (uint i = 0; i < 50; i++) {
+        //normal level up
+        for (uint i = 0; i < 10; i++) {
+            vm.expectEmit(true, true, true, true);
+            emit StartLevelUp(user1, tokenId, block.number);
             avatar.startLevelUp(tokenId);
             vm.rollFork(block.number + 87);
+
+            Attribute memory attribute = abi.decode(
+                avatar.getAttributeBytes(tokenId),
+                (Attribute)
+            );
+            vm.expectEmit(true, true, true, false);
+            emit OpenLevelUpResult(
+                user1,
+                tokenId,
+                attribute.LV + 1,
+                attribute.HP,
+                attribute.MP,
+                attribute.STR,
+                attribute.DEF,
+                attribute.DEX,
+                attribute.LUK
+            );
             avatar.openLevelUpResult(tokenId);
             console2.log(avatar.getAttributeJson(tokenId));
         }
+
+        //Status is not 2 level-up waiting
+        vm.expectRevert("Avatar Error: Status is not level-up waiting");
+        vm.rollFork(block.number + 87);
+        avatar.openLevelUpResult(tokenId);
+
+        //LevelUpWaitingBlock is not over
+        vm.expectEmit(true, true, true, true);
+        emit StartLevelUp(user1, tokenId, block.number);
+        avatar.startLevelUp(tokenId);
+        vm.rollFork(block.number + 8);
+        vm.expectRevert("Avatar Error: LevelUpWaitingBlock is not over");
+        avatar.openLevelUpResult(tokenId);
+
+        vm.rollFork(block.number + 888);
+        Attribute memory attribute2 = abi.decode(
+            avatar.getAttributeBytes(tokenId),
+            (Attribute)
+        );
+        vm.expectEmit(true, true, true, false);
+        emit OpenLevelUpResultOver256(
+            user1,
+            tokenId,
+            attribute2.LV + 1,
+            attribute2.HP,
+            attribute2.MP,
+            attribute2.STR,
+            attribute2.DEF,
+            attribute2.DEX,
+            attribute2.LUK
+        );
+        avatar.openLevelUpResult(tokenId);
 
         vm.stopPrank();
     }
