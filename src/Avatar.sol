@@ -69,7 +69,7 @@ contract Avatar is
     modifier checkAvatarOwner(uint tokenId) {
         require(
             ownerOf(tokenId) == msg.sender,
-            "Avatar Error: Only Owner can edit name"
+            "Avatar Error: You are not owner !"
         );
         _;
     }
