@@ -70,6 +70,9 @@ contract AvatarrTest is Test, Web3OnlineStorage {
         uint tokenId = avatar.mint(user1, "AppWorks", "B");
         assertEq(avatar.ownerOf(tokenId), user1);
         console2.log(avatar.getAttributeJson(tokenId));
+        //console2.log(block.number);
+        vm.rollFork(block.number + 1);
+        //console2.log(block.number);
 
         vm.stopPrank();
 
@@ -84,12 +87,17 @@ contract AvatarrTest is Test, Web3OnlineStorage {
         uint tokenId = avatar.mint(user1, "WMWMWMWMWMWMWMWMWMWM", "B");
         assertEq(avatar.ownerOf(tokenId), user1);
         console2.log(avatar.getAttributeJson(tokenId));
+        vm.rollFork(block.number + 1);
 
         vm.expectRevert("Avatar Error: Name is too long");
         avatar.mint(user1, "AppWorksAppWorksAppWorksAppWorksAppWorks", "B");
 
         vm.expectRevert("Avatar Error: Org is not in B, E, S, N");
         avatar.mint(user1, "AppWorks", "K");
+
+        avatar.mint(user1, "AppWorks", "B");
+        vm.expectRevert("Avatar Error: You have already minted in this block.");
+        avatar.mint(user1, "AppWorks2", "B");
 
         vm.stopPrank();
     }
@@ -115,7 +123,7 @@ contract AvatarrTest is Test, Web3OnlineStorage {
         vm.stopPrank();
 
         vm.startPrank(user2);
-        vm.expectRevert("Avatar Error: Only Owner can edit name");
+        vm.expectRevert("Avatar Error: You are not owner !");
         avatar.editName(tokenId, "AppWorks2");
         vm.stopPrank();
     }

@@ -13,19 +13,31 @@ contract Web3OnlineScript is Script {
 
         Avatar avatar = new Avatar();
 
-        uint tokenId = avatar.mint(0x7502D29B7ebEBb410d42FB8e4ff62CEd6CFC24d4, "AppWorks", "B");
+        uint tokenId = avatar.mint(vm.envAddress("USER_ADDRESS"), "AppWorks", "B");
         console2.log(avatar.getAttributeJson(tokenId));
-        console2.log(avatar.ownerOf(tokenId));
-        console2.log(address(this));
         avatar.startLevelUp(tokenId);
-
-        uint tokenId2 = avatar.mint(0x7502D29B7ebEBb410d42FB8e4ff62CEd6CFC24d4, "WMWMWMWMWMWMWMWMWMWM", "B");
-        console2.log(avatar.getAttributeJson(tokenId2));
-        avatar.startLevelUp(tokenId2);
 
         vm.stopBroadcast();
     }
 }
+
+contract MintScript is Script {
+    function setUp() public {}
+
+    function run() public {
+        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        vm.startBroadcast(deployerPrivateKey);
+
+        Avatar avatar = Avatar(vm.envAddress("WEB3ONLINE_CONTRACT"));
+
+        uint tokenId = avatar.mint(vm.envAddress("USER_ADDRESS"), "AppWorks", "B");
+        console2.log(avatar.getAttributeJson(tokenId));
+        avatar.startLevelUp(tokenId);
+
+        vm.stopBroadcast();
+    }
+}
+
 
 contract StartLevelUpScript is Script {
     function setUp() public {}
@@ -34,10 +46,9 @@ contract StartLevelUpScript is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
-        Avatar avatar = Avatar(0x71373cE70f9C0c7a3a096E3c78CA02e1Ff26A22d);
+        Avatar avatar = Avatar(vm.envAddress("WEB3ONLINE_CONTRACT"));
 
-        avatar.startLevelUp(1);
-        avatar.startLevelUp(2);
+        avatar.startLevelUp(vm.envUint("TOKEN_ID"));
 
         vm.stopBroadcast();
     }
@@ -51,10 +62,9 @@ contract OpenLevelUpResultScript is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
-        Avatar avatar = Avatar(0x71373cE70f9C0c7a3a096E3c78CA02e1Ff26A22d);
+        Avatar avatar = Avatar(vm.envAddress("WEB3ONLINE_CONTRACT"));
 
-        avatar.openLevelUpResult(1);
-        avatar.openLevelUpResult(2);
+        avatar.openLevelUpResult(vm.envUint("TOKEN_ID"));
 
         vm.stopBroadcast();
     }

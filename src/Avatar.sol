@@ -53,9 +53,11 @@ contract Avatar is
         uint LUK
     );
 
+    uint public constant LevelUpWaitingBlock = 86;
     mapping(uint => Attribute) public attributes;
     mapping(string => bool) public orgs;
     mapping(uint => uint) public levelUpStartBlocks;
+    mapping(address => uint) public lastMintedBlock;
     uint public NameMaxLength = 20;
 
     constructor() ERC721("Web3Online Avatar", "WOAV") Ownable(msg.sender) {
@@ -81,6 +83,12 @@ contract Avatar is
     ) public returns (uint) {
         require(checkNameStringLength(name), "Avatar Error: Name is too long");
         require(checkOrg(org), "Avatar Error: Org is not in B, E, S, N");
+        require(
+            lastMintedBlock[msg.sender] != block.number,
+            "Avatar Error: You have already minted in this block."
+        );
+
+        lastMintedBlock[msg.sender] = block.number;
 
         uint tokenId = totalSupply() + 1;
         _mint(to, tokenId);
@@ -130,7 +138,7 @@ contract Avatar is
     }
 
     function openLevelUpResult(uint tokenId) public checkAvatarOwner(tokenId) {
-        uint LevelUpWaitingBlock = 86;
+        // uint LevelUpWaitingBlock = 86;
         uint levelUpStartBlock = levelUpStartBlocks[tokenId];
         require(
             block.number > levelUpStartBlock + LevelUpWaitingBlock,
@@ -183,42 +191,60 @@ contract Avatar is
             uint threshold = LV > 30
                 ? 10 + LV - HP + (LV / uint(10))
                 : 10 + LV - HP;
-            if (getBlockHashUint(randomBlockNumber) % LV <= threshold) {
+            if (
+                (getBlockHashUint(randomBlockNumber) + tokenId) % LV <=
+                threshold
+            ) {
                 HP = HP + 1;
                 attribute.HP = HP;
             }
             randomBlockNumber = randomBlockNumber + ((HP % 7) + 1);
             //MP
             threshold = LV > 30 ? 10 + LV - MP + (LV / uint(10)) : 10 + LV - MP;
-            if (getBlockHashUint(randomBlockNumber) % LV <= threshold) {
+            if (
+                (getBlockHashUint(randomBlockNumber) + tokenId) % LV <=
+                threshold
+            ) {
                 MP = MP + 1;
                 attribute.MP = MP;
             }
             randomBlockNumber = randomBlockNumber + ((MP % 7) + 1);
             //STR
             threshold = LV > 30 ? LV - STR + (LV / uint(10)) : LV - STR;
-            if (getBlockHashUint(randomBlockNumber) % LV <= threshold) {
+            if (
+                (getBlockHashUint(randomBlockNumber) + tokenId) % LV <=
+                threshold
+            ) {
                 STR = STR + 1;
                 attribute.STR = STR;
             }
             randomBlockNumber = randomBlockNumber + ((STR % 7) + 1);
             //DEF
             threshold = LV > 30 ? LV - DEF + (LV / uint(10)) : LV - DEF;
-            if (getBlockHashUint(randomBlockNumber) % LV <= threshold) {
+            if (
+                (getBlockHashUint(randomBlockNumber) + tokenId) % LV <=
+                threshold
+            ) {
                 DEF = DEF + 1;
                 attribute.DEF = DEF;
             }
             randomBlockNumber = randomBlockNumber + ((DEF % 7) + 1);
             //DEX
             threshold = LV > 30 ? LV - DEX + (LV / uint(10)) : LV - DEX;
-            if (getBlockHashUint(randomBlockNumber) % LV <= threshold) {
+            if (
+                (getBlockHashUint(randomBlockNumber) + tokenId) % LV <=
+                threshold
+            ) {
                 DEX = DEX + 1;
                 attribute.DEX = DEX;
             }
             randomBlockNumber = randomBlockNumber + ((DEX % 7) + 1);
             //LUK
             threshold = LV > 30 ? LV - LUK + (LV / uint(10)) : LV - LUK;
-            if (getBlockHashUint(randomBlockNumber) % LV <= threshold) {
+            if (
+                (getBlockHashUint(randomBlockNumber) + tokenId) % LV <=
+                threshold
+            ) {
                 LUK = LUK + 1;
                 attribute.LUK = LUK;
             }
