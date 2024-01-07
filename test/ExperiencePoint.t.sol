@@ -7,6 +7,7 @@ import {ExperiencePoint} from "../src/ExperiencePoint.sol";
 import "../src/Web3OnlineStorage.sol";
 
 contract ExperiencePointTest is Test, Web3OnlineStorage {
+
     event StartMinting(
         address indexed owner,
         uint indexed tokenId,
@@ -58,7 +59,7 @@ contract ExperiencePointTest is Test, Web3OnlineStorage {
         assertEq(avatar.ownerOf(tokenId), user1);
         console2.log(avatar.getAttributeJson(tokenId));
         // vm.rollFork(block.number + 1);
-
+        
         vm.stopPrank();
 
         return tokenId;
@@ -78,31 +79,57 @@ contract ExperiencePointTest is Test, Web3OnlineStorage {
             vm.rollFork(block.number + 87);
             vm.expectEmit(true, true, false, false);
             emit Mint(user1, tokenId, 0);
-            experiencePoint.mint(tokenId);
-            console2.log(avatar.getAttributeJson(tokenId));
+            console2.log(experiencePoint.mint(tokenId));
             console2.log(experiencePoint.balanceOf(user1));
+            console2.log(avatar.getAttributeJson(tokenId));
+            vm.rollFork(block.number + 7201);
+        }
+
+        for (uint i = 0; i < 4; i++) {
+            avatar.startLevelUp(tokenId);
+            vm.rollFork(block.number + 87);
+            avatar.openLevelUpResult(tokenId);
+        }
+        console2.log(avatar.getAttributeJson(tokenId));
+
+        for (uint i = 0; i < 3; i++) {
+            vm.expectEmit(true, true, true, true);
+            emit StartMinting(user1, tokenId, block.number);
+            experiencePoint.startMinting(tokenId);
+            vm.rollFork(block.number + 87);
+            vm.expectEmit(true, true, false, false);
+            emit Mint(user1, tokenId, 0);
+            console2.log(experiencePoint.mint(tokenId));
+            console2.log(experiencePoint.balanceOf(user1));
+            console2.log(avatar.getAttributeJson(tokenId));
             vm.rollFork(block.number + 7201);
         }
 
         vm.rollFork(block.number - 7000);
-        vm.expectRevert("Avatar ExperiencePoint Error: Every MintPeriod blocks can be minted only once.");        
+        vm.expectRevert(
+            "Avatar ExperiencePoint Error: Every MintPeriod blocks can be minted only once."
+        );
         experiencePoint.startMinting(tokenId);
 
         vm.rollFork(block.number + 7000);
         experiencePoint.startMinting(tokenId);
-        vm.expectRevert("Avatar ExperiencePoint Error: MintWaitingBlock is not over");
+        vm.expectRevert(
+            "Avatar ExperiencePoint Error: MintWaitingBlock is not over"
+        );
         experiencePoint.mint(tokenId);
 
         vm.rollFork(block.number + 7201);
 
-        vm.expectRevert("Avatar ExperiencePoint Error: Avatar status is not idle");
+        vm.expectRevert(
+            "Avatar ExperiencePoint Error: Avatar status is not idle"
+        );
         experiencePoint.startMinting(tokenId);
 
         vm.expectEmit(true, true, true, true);
         emit MintingOver256(user1, tokenId, 0);
         experiencePoint.mint(tokenId);
 
-        experiencePoint.startMinting(tokenId);        
+        experiencePoint.startMinting(tokenId);
         vm.rollFork(block.number + 87);
         vm.stopPrank();
         vm.startPrank(address(experiencePoint));
@@ -110,9 +137,10 @@ contract ExperiencePointTest is Test, Web3OnlineStorage {
         vm.stopPrank();
 
         vm.startPrank(user1);
-        vm.expectRevert("Avatar ExperiencePoint Error: Status is not mintingStatus");
+        vm.expectRevert(
+            "Avatar ExperiencePoint Error: Status is not mintingStatus"
+        );
         experiencePoint.mint(tokenId);
         vm.stopPrank();
-
     }
 }

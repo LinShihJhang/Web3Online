@@ -66,7 +66,7 @@ contract ExperiencePoint is ERC20, ERC20Permit, Web3OnlineStorage, Ownable {
         emit StartMinting(msg.sender, tokenId, block.number);
     }
 
-    function mint(uint tokenId) public checkAvatarOwner(tokenId) {
+    function mint(uint tokenId) public checkAvatarOwner(tokenId) returns(uint) {
         uint mintStartBlock = mintStartBlocks[tokenId];
         require(
             block.number > mintStartBlock + randomWaitingBlock,
@@ -77,7 +77,6 @@ contract ExperiencePoint is ERC20, ERC20Permit, Web3OnlineStorage, Ownable {
             Avatar(AvatarAddress).getAttributeBytes(tokenId),
             (Attribute)
         );
-        uint LV = attribute.LV;
 
         require(
             attribute.STATUS == mintingStatus,
@@ -85,6 +84,7 @@ contract ExperiencePoint is ERC20, ERC20Permit, Web3OnlineStorage, Ownable {
         );
         Avatar(AvatarAddress).setAvatarStatus(tokenId, idleStatus);
 
+        uint amount = 0;
         //check over 256 blocks
         if (
             uint(blockhash(mintStartBlock)) == 0 &&
@@ -92,24 +92,18 @@ contract ExperiencePoint is ERC20, ERC20Permit, Web3OnlineStorage, Ownable {
             uint(blockhash(mintStartBlock - 2)) == 0
         ) {
             emit MintingOver256(msg.sender, tokenId, 0);
+            amount = 0;
         } else {
             uint pushForwardBlock = getBlockHashUint(
                 mintStartBlock + randomWaitingBlock / 2
             ) % (randomWaitingBlock / 2);
             uint randomBlockNumber = mintStartBlock + pushForwardBlock;
-            uint amount = 1 +
-                ((getBlockHashUint(randomBlockNumber) +
-                    tokenId +
-                    LV +
-                    attribute.HP +
-                    attribute.MP +
-                    attribute.STR +
-                    attribute.DEF +
-                    attribute.DEX +
-                    attribute.LUK) % LV);
+            amount = 1 + (getBlockHashUint(randomBlockNumber) + tokenId) % attribute.LV;
             _mint(msg.sender, amount);
             emit Mint(msg.sender, tokenId, amount);
+            
         }
+        return amount;
     }
 
     function getBlockHashUint(uint blocknumber) internal view returns (uint) {
