@@ -19,6 +19,12 @@ contract Web3OnlineStorage {
         uint DEF; //Defense：物理防禦力
         uint DEX; //Dexterity 敏捷 閃避
         uint LUK; //Luck 幸運 爆擊
-        uint STATUS; //目前狀態 1:idle 2:level-up waiting 3:farm
+        uint STATUS; //目前狀態 1:idle 2:leveling up 3:minting
     }
+
+    uint public constant randomWaitingBlock = 86;
+    uint public constant idleStatus = 1;
+    uint public constant levelingUpStatus = 2;
+    uint public constant mintingStatus = 3;
+
 }

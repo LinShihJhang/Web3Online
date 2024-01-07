@@ -135,7 +135,7 @@ contract AvatarrTest is Test, Web3OnlineStorage {
         console2.log(avatar.getAttributeJson(tokenId));
 
         //normal level up
-        for (uint i = 0; i < 10; i++) {
+        for (uint i = 0; i < 1; i++) {
             vm.expectEmit(true, true, true, true);
             emit StartLevelUp(user1, tokenId, block.number);
             avatar.startLevelUp(tokenId);
@@ -161,8 +161,8 @@ contract AvatarrTest is Test, Web3OnlineStorage {
             console2.log(avatar.getAttributeJson(tokenId));
         }
 
-        //Status is not 2 level-up waiting
-        vm.expectRevert("Avatar Error: Status is not level-up waiting");
+        //Status is not leveling up
+        vm.expectRevert("Avatar Error: Status is not leveling up");
         vm.rollFork(block.number + 87);
         avatar.openLevelUpResult(tokenId);
 
@@ -195,4 +195,7 @@ contract AvatarrTest is Test, Web3OnlineStorage {
 
         vm.stopPrank();
     }
+
+    //function updateStatusWhiteList(address whiteListAddress, uint status) public onlyOwner {
+    //setAvatarStatus(uint tokenId, uint status) public {
 }

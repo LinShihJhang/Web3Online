@@ -54,11 +54,12 @@ contract Avatar is
     );
 
     uint public constant LevelUpWaitingBlock = 86;
+    uint public NameMaxLength = 20;
     mapping(uint => Attribute) public attributes;
     mapping(string => bool) public orgs;
     mapping(uint => uint) public levelUpStartBlocks;
     mapping(address => uint) public lastMintedBlock;
-    uint public NameMaxLength = 20;
+    mapping(address => uint) public statusWhiteList;
 
     constructor() ERC721("Web3Online Avatar", "WOAV") Ownable(msg.sender) {
         // Initialize orgs
@@ -156,7 +157,7 @@ contract Avatar is
 
         require(
             attribute.STATUS == 2,
-            "Avatar Error: Status is not level-up waiting"
+            "Avatar Error: Status is not leveling up"
         );
         attribute.STATUS = 1;
 
@@ -263,6 +264,22 @@ contract Avatar is
         );
     }
 
+    function getAvatarStatus(uint tokenId) public view returns (uint) {
+        return attributes[tokenId].STATUS;
+    }
+
+    function setAvatarStatus(uint tokenId, uint status) public{
+        uint canSetStatus = getStatusWhiteList(msg.sender);
+        require(canSetStatus != 0, "Avatar Error: Status is not in whitelist");
+        require(
+            canSetStatus == status || canSetStatus == 1,
+            "Avatar Error: Can not set status"
+        );
+
+        Attribute storage attribute = attributes[tokenId];
+        attribute.STATUS = status;
+    }
+
     function checkNameStringLength(
         string calldata name
     ) public view returns (bool) {
@@ -281,21 +298,18 @@ contract Avatar is
         NameMaxLength = maxLength;
     }
 
-    // function getLevelUpWaitingBlock() public view returns (uint) {
-    //     return LevelUpWaitingBlock;
-    // }
+    function updateStatusWhiteList(
+        address whiteListAddress,
+        uint status
+    ) public onlyOwner {
+        statusWhiteList[whiteListAddress] = status;
+    }
 
-    // function changeLevelUpWaitingBlock(uint waitingBlock) public onlyOwner {
-    //     LevelUpWaitingBlock = waitingBlock;
-    // }
-
-    // function getHalfLevelUpWaitingBlock() public view returns (uint) {
-    //     return HalfLevelUpWaitingBlock;
-    // }
-
-    // function changeHalfLevelUpWaitingBlock(uint halfWaitingBlock) public onlyOwner {
-    //     HalfLevelUpWaitingBlock = halfWaitingBlock;
-    // }
+    function getStatusWhiteList(
+        address whiteListAddress
+    ) public view returns (uint) {
+        return statusWhiteList[whiteListAddress];
+    }
 
     function getBlockHashUint(uint blocknumber) internal view returns (uint) {
         return
@@ -312,14 +326,6 @@ contract Avatar is
         return abi.encode(attributes[tokenId]);
     }
 
-    // function getAttributeFromBytes(
-    //     bytes calldata data
-    // ) public pure returns (uint) {
-    //     Attribute memory attribute = abi.decode(data, (Attribute));
-    //     return attribute.HP;
-    // }
-
-    //getAtrribute
     function getAttributeJson(
         uint tokenId
     ) public view returns (string memory) {
