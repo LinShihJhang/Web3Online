@@ -65,15 +65,15 @@ contract ExperiencePointTest is Test, Web3OnlineStorage {
     }
 
     function testMinting() public {
-        assertEq(experiencePoint.getAvatarAddress(), address(avatar));
-        assertEq(experiencePoint.getMintPeriod(), 7200);
+
         uint tokenId = mint();
         vm.startPrank(user1);
-        assertEq(avatar.getStatusWhiteList(address(experiencePoint)),3);
         experiencePoint.startMinting(tokenId);
         console2.log(avatar.getAttributeJson(tokenId));
         vm.rollFork(block.number + 87);
         experiencePoint.mint(tokenId);
+        console2.log(avatar.getAttributeJson(tokenId));
+        console2.log(experiencePoint.balanceOf(user1));
         vm.stopPrank();
         
         

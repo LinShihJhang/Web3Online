@@ -28,7 +28,6 @@ contract ExperiencePoint is ERC20, ERC20Permit, Web3OnlineStorage, Ownable {
     address public AvatarAddress;
     uint public MintPeriod;
     mapping(uint => uint) public mintStartBlocks;
-    mapping(uint => uint) public lastMintBlocks;
 
     constructor(
         address _avatarAddress,
@@ -52,10 +51,10 @@ contract ExperiencePoint is ERC20, ERC20Permit, Web3OnlineStorage, Ownable {
 
     function startMinting(uint tokenId) public checkAvatarOwner(tokenId){
         require(
-            block.number >= lastMintBlocks[tokenId] + MintPeriod,
+            block.number >= mintStartBlocks[tokenId] + MintPeriod,
             "Avatar ExperiencePoint Error: Every MintPeriod blocks can be minted only once."
         );
-        lastMintBlocks[tokenId] = block.number;
+        mintStartBlocks[tokenId] = block.number;
 
         uint avatarStatus = Avatar(AvatarAddress).getAvatarStatus(tokenId);
         require(
@@ -63,7 +62,6 @@ contract ExperiencePoint is ERC20, ERC20Permit, Web3OnlineStorage, Ownable {
             "Avatar ExperiencePoint Error: Avatar status is not idle"
         );
         Avatar(AvatarAddress).setAvatarStatus(tokenId, mintingStatus);
-        mintStartBlocks[tokenId] = block.number;
 
         emit StartMinting(msg.sender, tokenId, block.number);
     }
@@ -85,7 +83,7 @@ contract ExperiencePoint is ERC20, ERC20Permit, Web3OnlineStorage, Ownable {
             attribute.STATUS == mintingStatus,
             "Avatar ExperiencePoint Error: Status is not mintingStatus"
         );
-        attribute.STATUS = idleStatus;
+        Avatar(AvatarAddress).setAvatarStatus(tokenId, idleStatus);
 
         //check over 256 blocks
         if (

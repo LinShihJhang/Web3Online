@@ -270,9 +270,9 @@ contract Avatar is
 
     function setAvatarStatus(uint tokenId, uint status) public{
         uint canSetStatus = getStatusWhiteList(msg.sender);
-        require(canSetStatus != 0, "Avatar Error: Status is not in whitelist");
+        require(canSetStatus > 0, "Avatar Error: Status is not in whitelist");
         require(
-            canSetStatus == status || canSetStatus == 1,
+            status == canSetStatus || status == idleStatus,
             "Avatar Error: Can not set status"
         );
 
