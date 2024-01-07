@@ -45,7 +45,7 @@ contract ExperiencePointTest is Test, Web3OnlineStorage {
         avatar.updateStatusWhiteList(address(experiencePoint), mintingStatus);
         assertEq(experiencePoint.getAvatarAddress(), address(avatar));
         assertEq(experiencePoint.getMintPeriod(), 7200);
-        
+
         vm.label(address(avatar), "Avatar");
         vm.label(address(experiencePoint), "WOXP");
         vm.stopPrank();
@@ -65,67 +65,54 @@ contract ExperiencePointTest is Test, Web3OnlineStorage {
     }
 
     function testMinting() public {
-
         uint tokenId = mint();
+
         vm.startPrank(user1);
+
+        //normal minting
+        for (uint i = 0; i < 1; i++) {
+            vm.expectEmit(true, true, true, true);
+            emit StartMinting(user1, tokenId, block.number);
+            experiencePoint.startMinting(tokenId);
+            console2.log(avatar.getAttributeJson(tokenId));
+            vm.rollFork(block.number + 87);
+            vm.expectEmit(true, true, false, false);
+            emit Mint(user1, tokenId, 0);
+            experiencePoint.mint(tokenId);
+            console2.log(avatar.getAttributeJson(tokenId));
+            console2.log(experiencePoint.balanceOf(user1));
+            vm.rollFork(block.number + 7201);
+        }
+
+        vm.rollFork(block.number - 7000);
+        vm.expectRevert("Avatar ExperiencePoint Error: Every MintPeriod blocks can be minted only once.");        
         experiencePoint.startMinting(tokenId);
-        console2.log(avatar.getAttributeJson(tokenId));
-        vm.rollFork(block.number + 87);
+
+        vm.rollFork(block.number + 7000);
+        experiencePoint.startMinting(tokenId);
+        vm.expectRevert("Avatar ExperiencePoint Error: MintWaitingBlock is not over");
         experiencePoint.mint(tokenId);
-        console2.log(avatar.getAttributeJson(tokenId));
-        console2.log(experiencePoint.balanceOf(user1));
+
+        vm.rollFork(block.number + 7201);
+
+        vm.expectRevert("Avatar ExperiencePoint Error: Avatar status is not idle");
+        experiencePoint.startMinting(tokenId);
+
+        vm.expectEmit(true, true, true, true);
+        emit MintingOver256(user1, tokenId, 0);
+        experiencePoint.mint(tokenId);
+
+        experiencePoint.startMinting(tokenId);        
+        vm.rollFork(block.number + 87);
         vm.stopPrank();
-        
-        
+        vm.startPrank(address(experiencePoint));
+        avatar.setAvatarStatus(tokenId, idleStatus);
+        vm.stopPrank();
 
         vm.startPrank(user1);
-
-        // for (uint i = 0; i < 10; i++) {
-        //     vm.rollFork(block.number + 7201);
-        //     // vm.expectEmit(true, true, true, true);
-        //     // emit StartMinting(user1, tokenId, block.number);
-        //     console2.log(avatar.getStatusWhiteList(address(experiencePoint)));
-        //     experiencePoint.startMinting(tokenId);
-        //     // vm.rollFork(block.number + 87);
-
-        //     // vm.expectEmit(true, true, false, false);
-        //     // emit Mint(user1, tokenId, 0);
-        //     // experiencePoint.mint(tokenId);
-        //     // console2.log(experiencePoint.balanceOf(user1));
-        // }
-
-        // //Status is not leveling up
-        // vm.expectRevert("Avatar Error: Status is not leveling up");
-        // vm.rollFork(block.number + 87);
-        // avatar.openLevelUpResult(tokenId);
-
-        // //LevelUpWaitingBlock is not over
-        // vm.expectEmit(true, true, true, true);
-        // emit StartLevelUp(user1, tokenId, block.number);
-        // avatar.startLevelUp(tokenId);
-        // vm.rollFork(block.number + 8);
-        // vm.expectRevert("Avatar Error: LevelUpWaitingBlock is not over");
-        // avatar.openLevelUpResult(tokenId);
-
-        // vm.rollFork(block.number + 888);
-        // Attribute memory attribute2 = abi.decode(
-        //     avatar.getAttributeBytes(tokenId),
-        //     (Attribute)
-        // );
-        // vm.expectEmit(true, true, true, false);
-        // emit OpenLevelUpResultOver256(
-        //     user1,
-        //     tokenId,
-        //     attribute2.LV + 1,
-        //     attribute2.HP,
-        //     attribute2.MP,
-        //     attribute2.STR,
-        //     attribute2.DEF,
-        //     attribute2.DEX,
-        //     attribute2.LUK
-        // );
-        // avatar.openLevelUpResult(tokenId);
-
+        vm.expectRevert("Avatar ExperiencePoint Error: Status is not mintingStatus");
+        experiencePoint.mint(tokenId);
         vm.stopPrank();
+
     }
 }
