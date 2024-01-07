@@ -39,7 +39,9 @@ contract ExperiencePointTest is Test, Web3OnlineStorage {
         console2.log(block.number);
         vm.rollFork(block.number - 700000);
         console2.log(block.number);
+    }
 
+    function testMinting() public {
         vm.startPrank(admin);
         avatar = new Avatar();
         experiencePoint = new ExperiencePoint(address(avatar), 7200);
@@ -52,25 +54,24 @@ contract ExperiencePointTest is Test, Web3OnlineStorage {
         vm.label(address(avatar), "Avatar");
         vm.label(address(experiencePoint), "WOXP");
         vm.stopPrank();
-    }
 
-    function mint() public returns (uint) {
+        deal(address(experiencePoint), user1, 10e26);
+
         vm.startPrank(user1);
+        experiencePoint.approve(address(avatar), 10e26);
 
-        uint tokenId = avatar.mint(user1, "AppWorks", "B");
+        uint tokenId = avatar.mint(user1, "LevelUpTester", "B");
         assertEq(avatar.ownerOf(tokenId), user1);
         console2.log(avatar.getAttributeJson(tokenId));
-        // vm.rollFork(block.number + 1);
-        
-        vm.stopPrank();
 
-        return tokenId;
-    }
+        assertEq(avatar.getExperiencePointAddress(), address(experiencePoint));
 
-    function testMinting() public {
-        uint tokenId = mint();
-
-        vm.startPrank(user1);
+        //level up
+        for (uint i = 0; i < 4; i++) {
+            avatar.startLevelUp(tokenId);
+            vm.rollFork(block.number + 87);
+            avatar.openLevelUpResult(tokenId);
+        }
 
         //normal minting
         for (uint i = 0; i < 1; i++) {
@@ -87,25 +88,6 @@ contract ExperiencePointTest is Test, Web3OnlineStorage {
             vm.rollFork(block.number + 7201);
         }
 
-        for (uint i = 0; i < 4; i++) {
-            avatar.startLevelUp(tokenId);
-            vm.rollFork(block.number + 87);
-            avatar.openLevelUpResult(tokenId);
-        }
-        console2.log(avatar.getAttributeJson(tokenId));
-
-        for (uint i = 0; i < 3; i++) {
-            vm.expectEmit(true, true, true, true);
-            emit StartMinting(user1, tokenId, block.number);
-            experiencePoint.startMinting(tokenId);
-            vm.rollFork(block.number + 87);
-            vm.expectEmit(true, true, false, false);
-            emit Mint(user1, tokenId, 0);
-            console2.log(experiencePoint.mint(tokenId));
-            console2.log(experiencePoint.balanceOf(user1));
-            console2.log(avatar.getAttributeJson(tokenId));
-            vm.rollFork(block.number + 7201);
-        }
 
         vm.rollFork(block.number - 7000);
         vm.expectRevert(
