@@ -3,16 +3,10 @@ pragma solidity ^0.8.20;
 
 import {Test, console2} from "forge-std/Test.sol";
 import {Avatar} from "../src/Avatar.sol";
+import {ExperiencePoint} from "../src/ExperiencePoint.sol";
 import "../src/Web3OnlineStorage.sol";
 
 contract AvatarrTest is Test, Web3OnlineStorage {
-    Avatar public avatar;
-
-    address admin = makeAddr("Admin");
-    address user1 = makeAddr("User1");
-    address user2 = makeAddr("User2");
-    address user3 = makeAddr("User3");
-
     event Mint(address indexed to, uint indexed tokenId, string indexed name);
     event EditName(
         address indexed owner,
@@ -48,6 +42,14 @@ contract AvatarrTest is Test, Web3OnlineStorage {
         uint LUK
     );
 
+    Avatar public avatar;
+    ExperiencePoint public experiencePoint;
+
+    address admin = makeAddr("Admin");
+    address user1 = makeAddr("User1");
+    address user2 = makeAddr("User2");
+    address user3 = makeAddr("User3");
+
     function setUp() public {
         // fork block
         vm.createSelectFork(vm.envString("MAIN_RPC"));
@@ -60,7 +62,19 @@ contract AvatarrTest is Test, Web3OnlineStorage {
 
         vm.startPrank(admin);
         avatar = new Avatar();
+        experiencePoint = new ExperiencePoint(address(avatar), 7200);
+        avatar.changeExperiencePointAddress(address(experiencePoint));
+        avatar.updateStatusWhiteList(address(experiencePoint), mintingStatus);
+        assertEq(experiencePoint.getAvatarAddress(), address(avatar));
+        assertEq(experiencePoint.getMintPeriod(), 7200);
         vm.label(address(avatar), "Avatar");
+        vm.label(address(experiencePoint), "WOXP");
+        vm.stopPrank();
+
+        deal(address(experiencePoint), user1, 10e26);
+
+        vm.startPrank(user1);
+        experiencePoint.approve(address(avatar), 10e26);
         vm.stopPrank();
     }
 

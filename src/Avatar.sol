@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Base64.sol";
 import "./StringUtils.sol";
 import "./Web3OnlineStorage.sol";
+import "./ExperiencePoint.sol";
 
 contract Avatar is
     ERC721Enumerable,
@@ -55,6 +56,7 @@ contract Avatar is
 
     uint public constant LevelUpWaitingBlock = 86;
     uint public NameMaxLength = 20;
+    address public ExperiencePointAddress;
     mapping(uint => Attribute) public attributes;
     mapping(string => bool) public orgs;
     mapping(uint => uint) public levelUpStartBlocks;
@@ -130,8 +132,16 @@ contract Avatar is
         require(attribute.STATUS == 1, "Avatar Error: Status is not idle");
         attribute.STATUS = 2;
 
-        //burn token
-        //require
+        uint LV = attribute.LV;
+
+        ExperiencePoint(ExperiencePointAddress).transferFrom(
+            msg.sender,
+            address(this),
+            LV * 3 * 10e18
+        );
+        ExperiencePoint(ExperiencePointAddress).burn(
+            (LV * 3 * 10e18 * 999) / 1000
+        );
 
         levelUpStartBlocks[tokenId] = block.number;
 
@@ -268,7 +278,7 @@ contract Avatar is
         return attributes[tokenId].STATUS;
     }
 
-    function setAvatarStatus(uint tokenId, uint status) public{
+    function setAvatarStatus(uint tokenId, uint status) public {
         uint canSetStatus = statusWhiteList[msg.sender];
         require(canSetStatus > 0, "Avatar Error: Status is not in whitelist");
         require(
@@ -296,6 +306,12 @@ contract Avatar is
 
     function changeNameMaxLength(uint maxLength) public onlyOwner {
         NameMaxLength = maxLength;
+    }
+
+    function changeExperiencePointAddress(
+        address _experiencePointAddress
+    ) public onlyOwner {
+        ExperiencePointAddress = _experiencePointAddress;
     }
 
     function updateStatusWhiteList(
