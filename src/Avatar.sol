@@ -308,6 +308,10 @@ contract Avatar is
         NameMaxLength = maxLength;
     }
 
+    function getExperiencePointAddress() public view returns (address) {
+        return ExperiencePointAddress;
+    }
+
     function changeExperiencePointAddress(
         address _experiencePointAddress
     ) public onlyOwner {

@@ -6,7 +6,7 @@ import {Avatar} from "../src/Avatar.sol";
 import {ExperiencePoint} from "../src/ExperiencePoint.sol";
 import "../src/Web3OnlineStorage.sol";
 
-contract AvatarrTest is Test, Web3OnlineStorage {
+contract AvatarTest is Test, Web3OnlineStorage {
     event Mint(address indexed to, uint indexed tokenId, string indexed name);
     event EditName(
         address indexed owner,
@@ -65,6 +65,7 @@ contract AvatarrTest is Test, Web3OnlineStorage {
         experiencePoint = new ExperiencePoint(address(avatar), 7200);
         avatar.changeExperiencePointAddress(address(experiencePoint));
         avatar.updateStatusWhiteList(address(experiencePoint), mintingStatus);
+        assertEq(avatar.getExperiencePointAddress(), address(experiencePoint));
         assertEq(experiencePoint.getAvatarAddress(), address(avatar));
         assertEq(experiencePoint.getMintPeriod(), 7200);
         vm.label(address(avatar), "Avatar");
@@ -149,7 +150,7 @@ contract AvatarrTest is Test, Web3OnlineStorage {
         console2.log(avatar.getAttributeJson(tokenId));
 
         //normal level up
-        for (uint i = 0; i < 1; i++) {
+        for (uint i = 0; i < 10; i++) {
             vm.expectEmit(true, true, true, true);
             emit StartLevelUp(user1, tokenId, block.number);
             avatar.startLevelUp(tokenId);

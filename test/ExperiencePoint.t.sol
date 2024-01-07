@@ -43,7 +43,9 @@ contract ExperiencePointTest is Test, Web3OnlineStorage {
         vm.startPrank(admin);
         avatar = new Avatar();
         experiencePoint = new ExperiencePoint(address(avatar), 7200);
+        avatar.changeExperiencePointAddress(address(experiencePoint));
         avatar.updateStatusWhiteList(address(experiencePoint), mintingStatus);
+        assertEq(avatar.getExperiencePointAddress(), address(experiencePoint));
         assertEq(experiencePoint.getAvatarAddress(), address(avatar));
         assertEq(experiencePoint.getMintPeriod(), 7200);
 
