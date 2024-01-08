@@ -96,11 +96,15 @@ contract ExperiencePoint is ERC20, ERC20Permit, Web3OnlineStorage, Ownable {
             emit MintingOver256(msg.sender, tokenId, 0);
             amount = 0;
         } else {
-            uint pushForwardBlock = getBlockHashUint(
+            uint pushForwardBlock = (getBlockHashUint(
                 mintStartBlock + randomWaitingBlock / 2
-            ) % (randomWaitingBlock / 2);
+            ) + tokenId) % (randomWaitingBlock / 2);
             uint randomBlockNumber = mintStartBlock + pushForwardBlock;
-            amount =(1 +((getBlockHashUint(randomBlockNumber) + tokenId) % attribute.LV)) * 10e18;
+            amount =
+                (1 +
+                    ((getBlockHashUint(randomBlockNumber) + tokenId) %
+                        attribute.LV)) *
+                10e18;
             _mint(msg.sender, amount);
             emit Mint(msg.sender, tokenId, amount);
         }

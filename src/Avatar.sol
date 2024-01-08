@@ -193,9 +193,9 @@ contract Avatar is
                 LUK
             );
         } else {
-            uint pushForwardBlock = getBlockHashUint(
+            uint pushForwardBlock = (getBlockHashUint(
                 levelUpStartBlock + LevelUpWaitingBlock / 2
-            ) % (LevelUpWaitingBlock / 2);
+            ) + tokenId) % (LevelUpWaitingBlock / 2);
             uint randomBlockNumber = levelUpStartBlock + pushForwardBlock;
 
             //HP
